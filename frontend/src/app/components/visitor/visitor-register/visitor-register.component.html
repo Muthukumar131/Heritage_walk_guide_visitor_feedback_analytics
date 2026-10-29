@@ -1,0 +1,77 @@
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-7 col-lg-5">
+      <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+        <div class="bg-primary bg-gradient text-white p-4 text-center">
+          <div class="display-6 mb-2">🏛️</div>
+          <h3 class="fw-bold mb-1">Create Visitor Account</h3>
+          <p class="text-white-50 small mb-0">Join the Heritage Walk community to explore sites and share authentic reviews</p>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+          <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage }}
+          </div>
+
+          <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>{{ successMessage }}
+          </div>
+
+          <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                <input type="text" class="form-control" name="fullName" [(ngModel)]="user.fullName" placeholder="e.g. John Doe" required>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                <input type="email" class="form-control" name="email" [(ngModel)]="user.email" placeholder="e.g. john@example.com" required>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Choose Username <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-at"></i></span>
+                <input type="text" class="form-control" name="username" [(ngModel)]="user.username" placeholder="e.g. heritage_fan" required>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Password <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
+                <input type="password" class="form-control" name="password" [(ngModel)]="user.password" placeholder="At least 6 characters" required>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label fw-semibold">Confirm Password <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-shield-lock"></i></span>
+                <input type="password" class="form-control" name="confirmPassword" [(ngModel)]="confirmPassword" placeholder="Re-enter your password" required>
+              </div>
+            </div>
+
+            <div class="d-grid mb-3">
+              <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold" [disabled]="loading">
+                <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+                {{ loading ? 'Creating Account...' : 'Register as Visitor' }}
+              </button>
+            </div>
+
+            <div class="text-center pt-2">
+              <span class="text-muted small">Already have an account? </span>
+              <a routerLink="/admin/login" class="text-primary fw-semibold small text-decoration-none">Log In</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

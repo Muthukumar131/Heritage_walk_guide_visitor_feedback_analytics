@@ -1,0 +1,19 @@
+/* Admin Dashboard Styles */
+.nav-pills .nav-link {
+  color: #4b5563;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  transition: all 0.2s ease;
+}
+
+.nav-pills .nav-link.active {
+  background-color: var(--heritage-primary);
+  color: #ffffff;
+}
+
+.table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.5px;
+}

@@ -1,0 +1,293 @@
+<div class="container py-4">
+  <!-- Top Greeting & Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom">
+    <div>
+      <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill mb-2">
+        <i class="bi bi-person-circle me-1"></i> Visitor Portal
+      </span>
+      <h2 class="font-serif fw-bold text-dark mb-1">
+        Welcome, {{ authService.getCurrentUser()?.fullName || authService.getCurrentUser()?.username }}!
+      </h2>
+      <p class="text-muted small mb-0">Discover monuments, cultural histories, walking routes, and manage your feedback.</p>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+      <a routerLink="/places" class="btn btn-outline-primary rounded-pill">
+        <i class="bi bi-compass me-1"></i> Explore Sites
+      </a>
+      <a routerLink="/feedback" class="btn btn-primary rounded-pill">
+        <i class="bi bi-pencil-square me-1"></i> Write Review
+      </a>
+      <button class="btn btn-outline-secondary rounded-pill" (click)="logout()">
+        <i class="bi bi-box-arrow-right me-1"></i> Sign Out
+      </button>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bi bi-check-circle-fill me-2"></i>{{ successMessage }}
+    <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="text-muted mt-2">Loading your personal visitor dashboard...</p>
+  </div>
+
+  <div *ngIf="!loading && dashboardData">
+    <!-- Stat Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white border-start border-primary border-4">
+          <div class="d-flex align-items-center">
+            <div class="p-3 bg-primary-subtle text-primary rounded-3 me-3">
+              <i class="bi bi-bank2 fs-3"></i>
+            </div>
+            <div>
+              <div class="text-muted small fw-semibold text-uppercase">Total Heritage Sites</div>
+              <h3 class="fw-bold mb-0 text-dark">{{ dashboardData.totalSitesAvailable }}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white border-start border-success border-4">
+          <div class="d-flex align-items-center">
+            <div class="p-3 bg-success-subtle text-success rounded-3 me-3">
+              <i class="bi bi-geo-alt-fill fs-3"></i>
+            </div>
+            <div>
+              <div class="text-muted small fw-semibold text-uppercase">Sites Explored</div>
+              <h3 class="fw-bold mb-0 text-dark">{{ dashboardData.sitesExploredCount }}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white border-start border-warning border-4">
+          <div class="d-flex align-items-center">
+            <div class="p-3 bg-warning-subtle text-warning-emphasis rounded-3 me-3">
+              <i class="bi bi-chat-quote-fill fs-3"></i>
+            </div>
+            <div>
+              <div class="text-muted small fw-semibold text-uppercase">Reviews Submitted</div>
+              <h3 class="fw-bold mb-0 text-dark">{{ dashboardData.reviewsSubmittedCount }}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white border-start border-info border-4">
+          <div class="d-flex align-items-center">
+            <div class="p-3 bg-info-subtle text-info rounded-3 me-3">
+              <i class="bi bi-star-half fs-3"></i>
+            </div>
+            <div>
+              <div class="text-muted small fw-semibold text-uppercase">Avg Rating Given</div>
+              <h3 class="fw-bold mb-0 text-dark">
+                {{ dashboardData.averageRatingGiven ? (dashboardData.averageRatingGiven | number:'1.1-1') : 'N/A' }}
+                <span *ngIf="dashboardData.averageRatingGiven" class="fs-6 text-warning">★</span>
+              </h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- My Reviews & Submissions -->
+    <div class="card border-0 shadow-sm rounded-4 mb-5 overflow-hidden">
+      <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-card-checklist text-primary me-2"></i>My Heritage Reviews</h5>
+          <span class="text-muted small">Manage feedback and ratings you submitted for heritage places</span>
+        </div>
+        <a routerLink="/feedback" class="btn btn-sm btn-outline-primary rounded-pill">
+          <i class="bi bi-plus-lg me-1"></i> Add New Review
+        </a>
+      </div>
+
+      <div class="card-body p-0">
+        <!-- If no reviews yet -->
+        <div *ngIf="dashboardData.myRecentReviews.length === 0" class="text-center py-5 px-3">
+          <i class="bi bi-chat-square-dots text-muted display-4 mb-3 d-block"></i>
+          <h5 class="text-secondary fw-semibold">No reviews submitted yet</h5>
+          <p class="text-muted small max-w-md mx-auto mb-3">
+            You haven't posted any feedback yet. Visit heritage sites, experience their architecture and heritage, and share your thoughts!
+          </p>
+          <a routerLink="/places" class="btn btn-primary rounded-pill px-4">
+            <i class="bi bi-compass me-1"></i> Explore Monuments to Review
+          </a>
+        </div>
+
+        <!-- Reviews Table -->
+        <div *ngIf="dashboardData.myRecentReviews.length > 0" class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light text-muted small text-uppercase">
+              <tr>
+                <th class="ps-4">Heritage Site</th>
+                <th>Rating</th>
+                <th>Your Review</th>
+                <th>Visit Date</th>
+                <th>Status</th>
+                <th class="text-end pe-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let review of dashboardData.myRecentReviews">
+                <td class="ps-4">
+                  <div class="fw-bold text-dark">{{ review.heritagePlace.name }}</div>
+                  <span class="badge bg-secondary-subtle text-secondary small">{{ review.heritagePlace.category }}</span>
+                </td>
+                <td>
+                  <span class="text-warning fw-bold fs-6">
+                    <span *ngFor="let s of [1,2,3,4,5]">
+                      <i class="bi" [ngClass]="s <= review.rating ? 'bi-star-fill text-warning' : 'bi-star text-muted'"></i>
+                    </span>
+                  </span>
+                  <div class="small text-muted">{{ review.rating }} / 5</div>
+                </td>
+                <td style="max-width: 350px;">
+                  <div class="text-dark">{{ review.comment }}</div>
+                  <span *ngIf="review.sentiment" class="badge rounded-pill mt-1"
+                        [ngClass]="review.sentiment === 'POSITIVE' ? 'bg-success-subtle text-success' : (review.sentiment === 'NEGATIVE' ? 'bg-danger-subtle text-danger' : 'bg-secondary-subtle text-secondary')">
+                    {{ review.sentiment }}
+                  </span>
+                </td>
+                <td>
+                  <span class="text-muted small">{{ review.visitDate || (review.createdAt | date:'mediumDate') }}</span>
+                </td>
+                <td>
+                  <span class="badge rounded-pill px-3 py-1 fw-bold"
+                        [ngClass]="{
+                          'bg-warning text-dark': (review.status === 'PENDING' || review.moderationStatus === 'PENDING'),
+                          'bg-success text-white': (review.status === 'APPROVED' || review.moderationStatus === 'APPROVED'),
+                          'bg-danger text-white': (review.status === 'REJECTED' || review.moderationStatus === 'REJECTED')
+                        }">
+                    <i class="bi me-1"
+                       [ngClass]="{
+                         'bi-clock-history': (review.status === 'PENDING' || review.moderationStatus === 'PENDING'),
+                         'bi-check-circle-fill': (review.status === 'APPROVED' || review.moderationStatus === 'APPROVED'),
+                         'bi-x-circle-fill': (review.status === 'REJECTED' || review.moderationStatus === 'REJECTED')
+                       }"></i>
+                    {{ review.status || review.moderationStatus || 'PENDING' }}
+                  </span>
+                  <div *ngIf="review.status === 'REJECTED' && review.moderationReason" class="small text-danger mt-1" style="font-size: 0.75rem;">
+                    <strong>Reason:</strong> {{ review.moderationReason }}
+                  </div>
+                  <div *ngIf="review.status === 'PENDING'" class="small text-muted mt-1" style="font-size: 0.72rem;">
+                    Awaiting moderation
+                  </div>
+                </td>
+                <td class="text-end pe-4">
+                  <button class="btn btn-sm btn-outline-primary me-2 rounded-pill px-3" (click)="startEditReview(review)">
+                    <i class="bi bi-pencil-fill me-1"></i> Edit
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger rounded-pill px-3" (click)="deleteReview(review.id)">
+                    <i class="bi bi-trash-fill me-1"></i> Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Review Modal / Backdrop -->
+    <div *ngIf="editingReview" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+          <div class="modal-header border-bottom">
+            <h5 class="modal-title fw-bold">
+              <i class="bi bi-pencil-square text-primary me-2"></i>Edit Review: {{ editingReview.heritagePlace.name }}
+            </h5>
+            <button type="button" class="btn-close" (click)="cancelEdit()"></button>
+          </div>
+          <div class="modal-body p-4">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Your Rating (1 to 5 Stars)</label>
+              <div class="d-flex gap-2">
+                <button type="button" *ngFor="let star of [1,2,3,4,5]"
+                        (click)="editRating = star"
+                        class="btn btn-sm rounded-circle"
+                        [ngClass]="star <= editRating ? 'btn-warning text-white' : 'btn-outline-secondary'">
+                  ★
+                </button>
+                <span class="ms-2 align-self-center fw-bold text-dark">{{ editRating }} Stars</span>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Review / Suggestion</label>
+              <textarea class="form-control" rows="4" [(ngModel)]="editComment" placeholder="Update your experience, architectural thoughts, or visitor suggestions..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer border-top bg-light">
+            <button type="button" class="btn btn-secondary rounded-pill" (click)="cancelEdit()" [disabled]="savingEdit">Cancel</button>
+            <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" (click)="saveEditReview()" [disabled]="savingEdit">
+              <span *ngIf="savingEdit" class="spinner-border spinner-border-sm me-2"></span>
+              {{ savingEdit ? 'Saving...' : 'Update Review' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Featured & Recommended Heritage Sites for Visitors -->
+    <div class="mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h4 class="fw-bold font-serif mb-1">Featured Heritage Sites</h4>
+          <p class="text-muted small mb-0">Recommended destinations rich in architecture, history, and culture</p>
+        </div>
+        <a routerLink="/places" class="btn btn-sm btn-outline-primary rounded-pill">View All Sites &rarr;</a>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-4" *ngFor="let place of dashboardData.featuredSites">
+          <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden place-card">
+            <div class="position-relative">
+              <img [src]="place.imageUrl || 'assets/images/placeholder.jpg'"
+                   class="card-img-top object-fit-cover"
+                   alt="{{ place.name }}"
+                   style="height: 200px;">
+              <span class="position-absolute top-0 end-0 m-3 badge bg-dark bg-opacity-75 rounded-pill px-3 py-1">
+                {{ place.category }}
+              </span>
+            </div>
+            <div class="card-body p-4 d-flex flex-column">
+              <h5 class="fw-bold font-serif text-dark mb-1">{{ place.name }}</h5>
+              <p class="text-muted small mb-2"><i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ place.address }}</p>
+              
+              <p class="text-secondary small mb-3 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                {{ place.description }}
+              </p>
+
+              <!-- Cultural Significance highlight -->
+              <div *ngIf="place.historicalSignificance" class="p-2 rounded bg-light border-start border-warning border-3 mb-3 small text-muted">
+                <strong>Cultural Significance:</strong> {{ place.historicalSignificance }}
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                <span class="text-muted small"><i class="bi bi-eye-fill text-primary me-1"></i>{{ place.visitCount || 0 }} visits</span>
+                <div class="btn-group">
+                  <a [routerLink]="['/places', place.id]" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                    Explore Details
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,936 @@
+<div class="bg-dark text-white py-4 border-bottom border-warning">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <span class="heritage-badge mb-2 d-inline-block">Control Center</span>
+        <h1 class="display-6 fw-bold font-serif mb-1 text-light">Admin Content & Report Hub</h1>
+        <p class="text-secondary small mb-0">Manage heritage sites, walking routes, visitor review moderation, and export official NGO reports.</p>
+      </div>
+      <div>
+        <span class="badge bg-success-subtle text-success border border-success-subtle me-2 p-2">
+          <i class="bi bi-shield-check me-1"></i> Admin: {{ authService.getCurrentUser()?.username }}
+        </span>
+        <button class="btn btn-outline-danger btn-sm rounded-pill" (click)="authService.logout()">
+          <i class="bi bi-box-arrow-right me-1"></i> Sign Out
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container py-4">
+  <!-- Toast Alert -->
+  <div *ngIf="alertMessage" class="alert alert-dismissible fade show p-3 rounded-3 shadow-sm mb-4"
+       [ngClass]="alertType === 'success' ? 'alert-success' : 'alert-danger'" role="alert">
+    <i class="bi me-2" [ngClass]="alertType === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'"></i>
+    {{ alertMessage }}
+    <button type="button" class="btn-close" (click)="alertMessage = ''"></button>
+  </div>
+
+  <!-- Tab Navigation -->
+  <ul class="nav nav-pills mb-4 bg-white p-2 rounded-3 shadow-sm border">
+    <li class="nav-item">
+      <button class="nav-link fw-semibold" [class.active]="activeTab === 'places'" (click)="activeTab = 'places'">
+        <i class="bi bi-bank2 me-1"></i> Monuments ({{ places.length }})
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link fw-semibold" [class.active]="activeTab === 'routes'" (click)="activeTab = 'routes'">
+        <i class="bi bi-map me-1"></i> Walking Routes ({{ routes.length }})
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link fw-semibold" [class.active]="activeTab === 'feedback'" (click)="activeTab = 'feedback'">
+        <i class="bi bi-shield-check me-1"></i> Review Moderation
+        <span *ngIf="moderationSummary.pendingCount > 0" class="badge bg-warning text-dark ms-1 rounded-pill">
+          {{ moderationSummary.pendingCount }}
+        </span>
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link fw-semibold btn-ngo-tab" [class.active]="activeTab === 'reports'" (click)="activeTab = 'reports'">
+        <i class="bi bi-file-earmark-bar-graph-fill me-1 text-warning"></i> NGO Reports & Export
+      </button>
+    </li>
+  </ul>
+
+  <!-- ==================== TAB 1: PLACES ==================== -->
+  <div *ngIf="activeTab === 'places'">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="font-serif fw-bold text-dark mb-0">Heritage Monuments Directory</h4>
+      <button class="btn btn-heritage-primary btn-sm rounded-pill px-3" (click)="openAddPlace()" data-bs-toggle="modal" data-bs-target="#placeModal">
+        <i class="bi bi-plus-circle me-1"></i> Add New Monument
+      </button>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden bg-white">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light small">
+            <tr>
+              <th>ID</th>
+              <th>Monument</th>
+              <th>Category</th>
+              <th>Era / Period</th>
+              <th>Hours</th>
+              <th>Visits</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="small">
+            <tr *ngFor="let p of places">
+              <td class="text-secondary fw-semibold">{{ p.id }}</td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <img [src]="p.imageUrl || 'assets/images/placeholder.jpg'"
+                       class="rounded object-fit-cover" style="width: 44px; height: 44px;" [alt]="p.name">
+                  <div>
+                    <strong class="d-block text-dark">{{ p.name }}</strong>
+                    <span class="text-muted" style="font-size: 0.75rem;">{{ p.address | slice:0:30 }}...</span>
+                  </div>
+                </div>
+              </td>
+              <td><span class="badge bg-secondary-subtle text-secondary">{{ p.category }}</span></td>
+              <td>{{ p.yearOrPeriod }}</td>
+              <td>{{ p.openingTime }} - {{ p.closingTime }}</td>
+              <td class="fw-bold text-danger">{{ p.visitCount || 0 }}</td>
+              <td class="text-end">
+                <button class="btn btn-outline-primary btn-sm me-1 rounded-pill" (click)="openEditPlace(p)" data-bs-toggle="modal" data-bs-target="#placeModal" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-outline-danger btn-sm rounded-pill" (click)="deletePlace(p.id)" title="Delete">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TAB 2: ROUTES ==================== -->
+  <div *ngIf="activeTab === 'routes'">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="font-serif fw-bold text-dark mb-0">Heritage Walking Routes</h4>
+      <button class="btn btn-heritage-primary btn-sm rounded-pill px-3" (click)="openAddRoute()" data-bs-toggle="modal" data-bs-target="#routeModal">
+        <i class="bi bi-plus-circle me-1"></i> Create Walking Route
+      </button>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6" *ngFor="let r of routes">
+        <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+          <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h5 class="fw-bold text-dark font-serif mb-0">{{ r.name }}</h5>
+              <span class="badge bg-warning text-dark">{{ r.difficultyLevel }}</span>
+            </div>
+            <p class="text-secondary small mb-3">{{ r.description }}</p>
+
+            <div class="d-flex gap-3 text-muted small mb-3">
+              <span><i class="bi bi-arrows-expand text-primary me-1"></i>{{ r.distanceKm }} KM</span>
+              <span><i class="bi bi-clock text-warning me-1"></i>{{ r.estimatedDuration }}</span>
+              <span><i class="bi bi-signpost text-success me-1"></i>{{ r.stops?.length || 0 }} Stops</span>
+            </div>
+
+            <div class="p-2 bg-light rounded-2 small text-muted mb-3">
+              <div><strong>Start:</strong> {{ r.startingPoint }}</div>
+              <div><strong>End:</strong> {{ r.endingPoint }}</div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+              <button class="btn btn-sm btn-outline-dark rounded-pill" (click)="manageStops(r)" data-bs-toggle="modal" data-bs-target="#stopsModal">
+                <i class="bi bi-list-ol me-1"></i> Stops ({{ r.stops?.length || 0 }})
+              </button>
+              <div>
+                <button class="btn btn-sm btn-outline-primary me-1 rounded-pill" (click)="openEditRoute(r)" data-bs-toggle="modal" data-bs-target="#routeModal">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger rounded-pill" (click)="deleteRoute(r.id)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TAB 3: REVIEW MODERATION HUB ==================== -->
+  <div *ngIf="activeTab === 'feedback'">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+      <div>
+        <h4 class="font-serif fw-bold text-dark mb-0">
+          <i class="bi bi-shield-check text-warning me-2"></i>Review Moderation & Content Safety Hub
+        </h4>
+        <p class="text-muted small mb-0">Inspect, approve, or reject visitor feedback before publication. Filtered reviews protect community integrity.</p>
+      </div>
+      <button class="btn btn-outline-secondary btn-sm rounded-pill mt-2 mt-md-0" (click)="loadFeedback(); loadModerationSummary()">
+        <i class="bi bi-arrow-clockwise me-1"></i> Refresh List
+      </button>
+    </div>
+
+    <!-- 4 Moderation KPI Summary Tiles -->
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-warning border-4 cursor-pointer"
+             (click)="filterByQuickStatus('PENDING')">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="small text-uppercase text-muted fw-semibold">Pending Moderation</div>
+              <h3 class="fw-bold mb-0 text-warning-emphasis">{{ moderationSummary.pendingCount }}</h3>
+            </div>
+            <div class="p-3 bg-warning-subtle text-warning-emphasis rounded-3">
+              <i class="bi bi-clock-history fs-3"></i>
+            </div>
+          </div>
+          <div class="small text-muted mt-2">Awaiting admin review</div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-success border-4 cursor-pointer"
+             (click)="filterByQuickStatus('APPROVED')">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="small text-uppercase text-muted fw-semibold">Approved Reviews</div>
+              <h3 class="fw-bold mb-0 text-success">{{ moderationSummary.approvedCount }}</h3>
+            </div>
+            <div class="p-3 bg-success-subtle text-success rounded-3">
+              <i class="bi bi-check-circle-fill fs-3"></i>
+            </div>
+          </div>
+          <div class="small text-muted mt-2">Published on public site</div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-danger border-4 cursor-pointer"
+             (click)="filterByQuickStatus('REJECTED')">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="small text-uppercase text-muted fw-semibold">Rejected Reviews</div>
+              <h3 class="fw-bold mb-0 text-danger">{{ moderationSummary.rejectedCount }}</h3>
+            </div>
+            <div class="p-3 bg-danger-subtle text-danger rounded-3">
+              <i class="bi bi-x-circle-fill fs-3"></i>
+            </div>
+          </div>
+          <div class="small text-muted mt-2">Excluded from public site</div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-secondary border-4 cursor-pointer"
+             (click)="filterByQuickStatus('ALL')">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="small text-uppercase text-muted fw-semibold">Total Submissions</div>
+              <h3 class="fw-bold mb-0 text-dark">{{ moderationSummary.totalCount }}</h3>
+            </div>
+            <div class="p-3 bg-secondary-subtle text-secondary rounded-3">
+              <i class="bi bi-chat-square-text-fill fs-3"></i>
+            </div>
+          </div>
+          <div class="small text-muted mt-2">All recorded entries</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Review Filter Controls -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+          <label class="small text-muted fw-semibold">Moderation Status</label>
+          <select class="form-select form-select-sm" [(ngModel)]="reviewFilter.status" (change)="applyReviewFilters()">
+            <option value="ALL">All Statuses</option>
+            <option value="PENDING">Pending Moderation</option>
+            <option value="APPROVED">Approved Only</option>
+            <option value="REJECTED">Rejected Only</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="small text-muted fw-semibold">Filter by Monument</label>
+          <select class="form-select form-select-sm" [(ngModel)]="reviewFilter.siteId" (change)="applyReviewFilters()">
+            <option [ngValue]="undefined">All Monuments</option>
+            <option *ngFor="let p of places" [value]="p.id">{{ p.name }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="small text-muted fw-semibold">Min Rating</label>
+          <select class="form-select form-select-sm" [(ngModel)]="reviewFilter.minRating" (change)="applyReviewFilters()">
+            <option [ngValue]="undefined">All Ratings</option>
+            <option [value]="5">5 Stars</option>
+            <option [value]="4">4+ Stars</option>
+            <option [value]="3">3+ Stars</option>
+            <option [value]="2">2+ Stars</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="small text-muted fw-semibold">Search Comments</label>
+          <input type="text" class="form-control form-select-sm" placeholder="Search keyword..." [(ngModel)]="reviewFilter.search" (keyup.enter)="applyReviewFilters()">
+        </div>
+        <div class="col-md-2 d-flex gap-1">
+          <button class="btn btn-primary btn-sm flex-fill rounded-pill" (click)="applyReviewFilters()">
+            <i class="bi bi-funnel me-1"></i> Filter
+          </button>
+          <button class="btn btn-outline-secondary btn-sm rounded-pill" (click)="resetReviewFilters()" title="Reset Filters">
+            <i class="bi bi-arrow-counterclockwise"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reviews Table with Moderation -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden bg-white mb-4">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light small">
+            <tr>
+              <th>ID</th>
+              <th>Monument</th>
+              <th>Visitor</th>
+              <th>Rating</th>
+              <th style="min-width: 260px;">Review Comment</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="small">
+            <tr *ngIf="feedbackList.length === 0">
+              <td colspan="8" class="text-center py-4 text-muted">
+                No reviews found matching the selected moderation filters.
+              </td>
+            </tr>
+            <tr *ngFor="let f of feedbackList" [class.table-warning]="f.status === 'PENDING'">
+              <td class="text-secondary fw-semibold">#{{ f.id }}</td>
+              <td><strong class="text-dark">{{ f.heritagePlace.name }}</strong></td>
+              <td>
+                <div class="fw-semibold text-dark">{{ f.visitorName }}</div>
+                <small class="text-muted" style="font-size: 0.72rem;">User ID: {{ f.userId || 'Guest' }}</small>
+              </td>
+              <td>
+                <span class="text-warning fw-bold">
+                  {{ f.rating }} <i class="bi bi-star-fill"></i>
+                </span>
+              </td>
+              <td>
+                <div class="text-dark mb-1">{{ f.comment }}</div>
+                <div class="d-flex gap-1 flex-wrap align-items-center">
+                  <span class="badge" [ngClass]="f.sentiment === 'POSITIVE' ? 'bg-success-subtle text-success' : (f.sentiment === 'NEGATIVE' ? 'bg-danger-subtle text-danger' : 'bg-secondary-subtle text-secondary')">
+                    {{ f.sentiment || 'NEUTRAL' }}
+                  </span>
+                  <span *ngIf="f.flaggedContent" class="badge bg-danger text-white" title="{{ f.flaggedReason }}">
+                    <i class="bi bi-shield-exclamation me-1"></i> Flagged Term
+                  </span>
+                  <small *ngIf="f.moderationReason" class="text-muted fst-italic" style="font-size: 0.72rem;">
+                    Note: {{ f.moderationReason }}
+                  </small>
+                </div>
+              </td>
+              <td class="text-secondary small">{{ f.visitDate || (f.createdAt | date:'shortDate') }}</td>
+              <td>
+                <span class="badge rounded-pill px-3 py-1 fw-bold"
+                      [ngClass]="{
+                        'bg-warning text-dark': (f.status === 'PENDING' || f.moderationStatus === 'PENDING'),
+                        'bg-success text-white': (f.status === 'APPROVED' || f.moderationStatus === 'APPROVED'),
+                        'bg-danger text-white': (f.status === 'REJECTED' || f.moderationStatus === 'REJECTED')
+                      }">
+                  <i class="bi me-1"
+                     [ngClass]="{
+                       'bi-clock-history': (f.status === 'PENDING' || f.moderationStatus === 'PENDING'),
+                       'bi-check-circle-fill': (f.status === 'APPROVED' || f.moderationStatus === 'APPROVED'),
+                       'bi-x-circle-fill': (f.status === 'REJECTED' || f.moderationStatus === 'REJECTED')
+                     }"></i>
+                  {{ f.status || f.moderationStatus || 'PENDING' }}
+                </span>
+              </td>
+              <td class="text-end">
+                <button class="btn btn-sm btn-outline-info me-1 rounded-pill" (click)="viewDetails(f)" title="View Details">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <button *ngIf="f.status !== 'APPROVED'" class="btn btn-sm btn-success me-1 rounded-pill fw-semibold" (click)="approveReview(f)" title="Approve Review">
+                  <i class="bi bi-check-lg me-1"></i> Approve
+                </button>
+                <button *ngIf="f.status !== 'REJECTED'" class="btn btn-sm btn-danger me-1 rounded-pill fw-semibold" (click)="openRejectModal(f)" title="Reject Review">
+                  <i class="bi bi-x-lg me-1"></i> Reject
+                </button>
+                <button class="btn btn-sm btn-outline-danger rounded-pill" (click)="deleteReviewAdmin(f.id)" title="Delete Permanently">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Reject Confirmation Modal -->
+    <div *ngIf="selectedReviewForReject" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+          <div class="modal-header bg-danger text-white border-0">
+            <h5 class="modal-title fw-bold">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Review Rejection
+            </h5>
+            <button type="button" class="btn-close btn-close-white" (click)="closeRejectModal()"></button>
+          </div>
+          <div class="modal-body p-4">
+            <p class="text-dark mb-2">
+              Are you sure you want to <strong>reject</strong> this review for <strong>{{ selectedReviewForReject.heritagePlace.name }}</strong>?
+            </p>
+            <div class="p-3 bg-light rounded-3 border mb-3 small">
+              <strong class="d-block text-dark">{{ selectedReviewForReject.visitorName }} ({{ selectedReviewForReject.rating }} Stars):</strong>
+              <em>"{{ selectedReviewForReject.comment }}"</em>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-secondary">Internal Moderation Reason (Visible to submitting visitor in their dashboard):</label>
+              <textarea class="form-control" rows="3" [(ngModel)]="rejectReasonText" placeholder="e.g. Inappropriate language, off-topic, or unsubstantiated claims."></textarea>
+            </div>
+            <div class="small text-muted">
+              <i class="bi bi-info-circle me-1"></i> The review will NOT be published on public pages. It will remain in the visitor's history marked as REJECTED.
+            </div>
+          </div>
+          <div class="modal-footer border-top bg-light">
+            <button type="button" class="btn btn-secondary rounded-pill" (click)="closeRejectModal()">Cancel</button>
+            <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold" (click)="confirmRejectReview()">
+              <i class="bi bi-x-circle me-1"></i> Confirm Rejection
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Review Inspection Modal -->
+    <div *ngIf="reviewDetailsModal" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+          <div class="modal-header bg-dark text-white border-bottom border-warning">
+            <h5 class="modal-title font-serif fw-bold">
+              <i class="bi bi-card-text text-warning me-2"></i>Review Inspection: #{{ reviewDetailsModal.id }}
+            </h5>
+            <button type="button" class="btn-close btn-close-white" (click)="closeDetailsModal()"></button>
+          </div>
+          <div class="modal-body p-4">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="small text-muted fw-semibold">Monument</label>
+                <div class="fw-bold fs-5 text-dark">{{ reviewDetailsModal.heritagePlace.name }}</div>
+                <span class="badge bg-secondary-subtle text-secondary">{{ reviewDetailsModal.heritagePlace.category }}</span>
+              </div>
+              <div class="col-md-6">
+                <label class="small text-muted fw-semibold">Visitor Information</label>
+                <div class="fw-bold text-dark">{{ reviewDetailsModal.visitorName }}</div>
+                <div class="text-muted small">User ID: {{ reviewDetailsModal.userId || 'Guest Submission' }}</div>
+              </div>
+              <div class="col-12">
+                <label class="small text-muted fw-semibold">Full Visitor Review Comment</label>
+                <div class="p-3 bg-light rounded-3 border text-dark fs-6">
+                  "{{ reviewDetailsModal.comment }}"
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="small text-muted fw-semibold">Rating</label>
+                <div class="fw-bold text-warning fs-5">
+                  {{ reviewDetailsModal.rating }} / 5 Stars
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="small text-muted fw-semibold">Current Status</label>
+                <div>
+                  <span class="badge rounded-pill px-3 py-1 fw-bold"
+                        [ngClass]="{
+                          'bg-warning text-dark': reviewDetailsModal.status === 'PENDING',
+                          'bg-success text-white': reviewDetailsModal.status === 'APPROVED',
+                          'bg-danger text-white': reviewDetailsModal.status === 'REJECTED'
+                        }">
+                    {{ reviewDetailsModal.status }}
+                  </span>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="small text-muted fw-semibold">Sentiment Analysis</label>
+                <div>
+                  <span class="badge" [ngClass]="reviewDetailsModal.sentiment === 'POSITIVE' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'">
+                    {{ reviewDetailsModal.sentiment }}
+                  </span>
+                </div>
+              </div>
+              <div class="col-12" *ngIf="reviewDetailsModal.flaggedContent">
+                <div class="alert alert-danger py-2 px-3 small rounded-3 mb-0">
+                  <i class="bi bi-shield-exclamation me-1"></i>
+                  <strong>Automated Safety Flag:</strong> {{ reviewDetailsModal.flaggedReason }}
+                </div>
+              </div>
+              <div class="col-12" *ngIf="reviewDetailsModal.moderatedBy">
+                <div class="p-2 bg-light rounded border small text-muted">
+                  <strong>Moderated By:</strong> {{ reviewDetailsModal.moderatedBy }} | 
+                  <strong>Moderated At:</strong> {{ reviewDetailsModal.moderatedAt | date:'medium' }}
+                  <div *ngIf="reviewDetailsModal.moderationReason" class="mt-1">
+                    <strong>Reason / Note:</strong> {{ reviewDetailsModal.moderationReason }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer border-top bg-light">
+            <button *ngIf="reviewDetailsModal.status !== 'APPROVED'" class="btn btn-success rounded-pill px-4 fw-bold" (click)="approveReview(reviewDetailsModal); closeDetailsModal()">
+              <i class="bi bi-check-lg me-1"></i> Approve
+            </button>
+            <button *ngIf="reviewDetailsModal.status !== 'REJECTED'" class="btn btn-danger rounded-pill px-4 fw-bold" (click)="openRejectModal(reviewDetailsModal); closeDetailsModal()">
+              <i class="bi bi-x-lg me-1"></i> Reject
+            </button>
+            <button type="button" class="btn btn-secondary rounded-pill" (click)="closeDetailsModal()">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TAB 4: NGO REPORTS & EXPORT ==================== -->
+  <div *ngIf="activeTab === 'reports'">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h4 class="font-serif fw-bold text-dark mb-1">
+          <i class="bi bi-file-earmark-bar-graph-fill text-warning me-2"></i>NGO & Governance Report Generator
+        </h4>
+        <p class="text-muted small mb-0">Generate professional, auditable heritage assessment reports and export them in PDF or multi-sheet Excel format.</p>
+      </div>
+    </div>
+
+    <!-- Filter & Configuration Panel -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+      <h5 class="fw-bold text-dark mb-3"><i class="bi bi-sliders text-primary me-2"></i>Report Configuration & Scope</h5>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold text-secondary">Target Heritage Monument</label>
+          <select class="form-select" [(ngModel)]="reportFilters.siteId" (change)="loadReportSummary()">
+            <option [ngValue]="undefined">All Heritage Monuments (Comprehensive Report)</option>
+            <option *ngFor="let p of places" [value]="p.id">{{ p.name }} ({{ p.category }})</option>
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold text-secondary">Heritage Category Filter</label>
+          <select class="form-select" [(ngModel)]="reportFilters.category" (change)="loadReportSummary()">
+            <option value="ALL">All Heritage Categories</option>
+            <option value="Fort & Palace">Fort & Palace</option>
+            <option value="Religious Monument">Religious Monument</option>
+            <option value="Tower & Minaret">Tower & Minaret</option>
+            <option value="Mausoleum">Mausoleum</option>
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold text-secondary">Organization / NGO Header</label>
+          <input type="text" class="form-control" [(ngModel)]="reportFilters.organizationName" placeholder="e.g. Heritage Preservation Trust">
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label small fw-semibold text-secondary">Start Date</label>
+          <input type="date" class="form-control" [(ngModel)]="reportFilters.startDate" (change)="loadReportSummary()">
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label small fw-semibold text-secondary">End Date</label>
+          <input type="date" class="form-control" [(ngModel)]="reportFilters.endDate" (change)="loadReportSummary()">
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label small fw-semibold text-secondary">Minimum Rating Filter</label>
+          <select class="form-select" [(ngModel)]="reportFilters.minRating" (change)="loadReportSummary()">
+            <option [ngValue]="undefined">All Ratings (1 - 5 Stars)</option>
+            <option [value]="4">4 Stars & Above</option>
+            <option [value]="3">3 Stars & Above</option>
+            <option [value]="2">2 Stars & Above</option>
+          </select>
+        </div>
+
+        <div class="col-md-3 d-flex align-items-center pt-3">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="includeReviewsCheck" [(ngModel)]="reportFilters.includeReviews">
+            <label class="form-check-label small fw-semibold text-dark" for="includeReviewsCheck">
+              Include Full Visitor Review Log in PDF
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mt-4 pt-3 border-top">
+        <button class="btn btn-outline-secondary rounded-pill px-4" (click)="loadReportSummary()" [disabled]="loadingSummary">
+          <span *ngIf="loadingSummary" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!loadingSummary" class="bi bi-arrow-clockwise me-2"></i> Refresh Preview
+        </button>
+
+        <div class="d-flex gap-2">
+          <button class="btn btn-danger rounded-pill px-4 fw-bold shadow-sm" (click)="downloadPdfReport()" [disabled]="downloadingPdf">
+            <span *ngIf="downloadingPdf" class="spinner-border spinner-border-sm me-2"></span>
+            <i *ngIf="!downloadingPdf" class="bi bi-file-earmark-pdf-fill me-2"></i> Download Official PDF Report
+          </button>
+          <button class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" (click)="downloadExcelReport()" [disabled]="downloadingExcel">
+            <span *ngIf="downloadingExcel" class="spinner-border spinner-border-sm me-2"></span>
+            <i *ngIf="!downloadingExcel" class="bi bi-file-earmark-excel-fill me-2"></i> Download 5-Sheet Excel Workbook
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Report Preview -->
+    <div *ngIf="loadingSummary" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="text-muted mt-2">Computing real-time NGO report metrics from MySQL...</p>
+    </div>
+
+    <div *ngIf="!loadingSummary && reportSummary" class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+      <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-4 flex-wrap">
+        <div>
+          <span class="badge bg-warning text-dark px-3 py-1 rounded-pill mb-2">NGO Evaluation Report Preview</span>
+          <h3 class="font-serif fw-bold text-dark mb-1">{{ reportSummary.reportTitle }}</h3>
+          <p class="text-muted small mb-0"><strong>Prepared For:</strong> {{ reportSummary.organizationName }} | <strong>Period:</strong> {{ reportSummary.reportingPeriod }}</p>
+        </div>
+        <div class="text-end mt-2 mt-md-0">
+          <span class="badge bg-light text-secondary border p-2">Generated: {{ reportSummary.generatedDate }}</span>
+        </div>
+      </div>
+
+      <!-- Moderation Compliance & Review Scope Banner -->
+      <div class="alert alert-info d-flex align-items-center justify-content-between flex-wrap gap-2 p-3 rounded-3 mb-4">
+        <div>
+          <i class="bi bi-shield-check-fill text-primary fs-5 me-2"></i>
+          <strong>Governance & Moderation Compliance:</strong>
+          <span class="ms-1">Feedback analytics exclusively evaluate verified <strong>APPROVED</strong> reviews ({{ reportSummary.totalReviewsAnalyzed }} reviews).</span>
+        </div>
+        <div class="d-flex gap-2">
+          <span class="badge bg-success-subtle text-success border border-success-subtle">Approved: {{ reportSummary.approvedReviewsCount || reportSummary.totalReviewsAnalyzed }}</span>
+          <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Pending: {{ reportSummary.pendingReviewsCount || 0 }}</span>
+          <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Rejected: {{ reportSummary.rejectedReviewsCount || 0 }}</span>
+        </div>
+      </div>
+
+      <!-- Summary Metrics Cards -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <div class="p-3 rounded-3 bg-light border-start border-primary border-4">
+            <div class="text-muted small text-uppercase fw-semibold">Heritage Monuments Evaluated</div>
+            <h3 class="fw-bold mb-0 text-dark">{{ reportSummary.totalSitesCovered }}</h3>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-3 rounded-3 bg-light border-start border-success border-4">
+            <div class="text-muted small text-uppercase fw-semibold">Visitor Reviews Analyzed</div>
+            <h3 class="fw-bold mb-0 text-dark">{{ reportSummary.totalReviewsAnalyzed }}</h3>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-3 rounded-3 bg-light border-start border-warning border-4">
+            <div class="text-muted small text-uppercase fw-semibold">Overall Heritage Satisfaction</div>
+            <h3 class="fw-bold mb-0 text-dark">{{ reportSummary.overallAverageRating | number:'1.2-2' }} / 5.00 ★</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feedback Categories Breakdown -->
+      <div class="card p-3 bg-light border rounded-3 mb-4">
+        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-pie-chart-fill text-primary me-2"></i>Key Infrastructure & Visitor Experience Indicators</h6>
+        <div class="row g-3">
+          <div class="col-sm-6 col-md" *ngFor="let cat of reportSummary.feedbackCategories | keyvalue">
+            <div class="p-2 bg-white rounded border text-center">
+              <span class="text-muted small d-block">{{ cat.key }}</span>
+              <strong class="fs-5 text-dark">{{ cat.value }}</strong>
+              <small class="text-muted d-block" style="font-size: 0.7rem;">mentions</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Site Evaluation Details Table -->
+      <h6 class="fw-bold text-dark mb-2"><i class="bi bi-bank2 text-primary me-2"></i>Site Evaluation Matrix & Cultural Significance</h6>
+      <div class="table-responsive mb-4">
+        <table class="table table-bordered table-hover align-middle mb-0">
+          <thead class="table-light small">
+            <tr>
+              <th>Monument</th>
+              <th>Category</th>
+              <th>Location</th>
+              <th>Avg Rating</th>
+              <th>Reviews</th>
+              <th>Cultural Significance</th>
+            </tr>
+          </thead>
+          <tbody class="small">
+            <tr *ngFor="let s of reportSummary.siteSummaries">
+              <td class="fw-bold text-dark">{{ s.siteName }}</td>
+              <td><span class="badge bg-secondary-subtle text-secondary">{{ s.category }}</span></td>
+              <td class="text-muted">{{ s.location }}</td>
+              <td class="fw-bold text-warning">{{ s.averageRating | number:'1.2-2' }} ★</td>
+              <td>{{ s.reviewCount }}</td>
+              <td class="text-secondary small">{{ s.culturalSignificance }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Observations & Recommendations -->
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="p-3 rounded-3 bg-light border h-100">
+            <h6 class="fw-bold text-primary mb-2"><i class="bi bi-binoculars-fill me-2"></i>Key Field Observations</h6>
+            <ul class="list-unstyled mb-0 small">
+              <li *ngFor="let obs of reportSummary.observations" class="mb-2 d-flex align-items-start">
+                <i class="bi bi-check2-circle text-primary me-2 mt-1"></i>
+                <span>{{ obs }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="p-3 rounded-3 bg-light border h-100">
+            <h6 class="fw-bold text-success mb-2"><i class="bi bi-lightbulb-fill me-2"></i>Actionable Recommendations for NGOs</h6>
+            <ul class="list-unstyled mb-0 small">
+              <li *ngFor="let rec of reportSummary.recommendations" class="mb-2 d-flex align-items-start">
+                <i class="bi bi-arrow-right-circle text-success me-2 mt-1"></i>
+                <span>{{ rec }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL: ADD / EDIT PLACE ==================== -->
+<div class="modal fade" id="placeModal" tabindex="-1" aria-labelledby="placeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content rounded-3 border-0 shadow">
+      <div class="modal-header bg-dark text-white border-bottom border-warning">
+        <h5 class="modal-title font-serif fw-bold" id="placeModalLabel">
+          <i class="bi bi-bank2 text-warning me-2"></i>
+          {{ isEditingPlace ? 'Edit Heritage Monument' : 'Add New Heritage Monument' }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <form (ngSubmit)="savePlace()">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label small fw-semibold">Monument Name *</label>
+              <input type="text" class="form-control" [(ngModel)]="placeForm.name" name="name" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Category *</label>
+              <select class="form-select" [(ngModel)]="placeForm.category" name="category" required>
+                <option value="Fort & Palace">Fort & Palace</option>
+                <option value="Religious Monument">Religious Monument</option>
+                <option value="Tower & Minaret">Tower & Minaret</option>
+                <option value="Mausoleum">Mausoleum</option>
+                <option value="War Memorial">War Memorial</option>
+                <option value="Observatory">Observatory</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Era / Historical Period</label>
+              <input type="text" class="form-control" placeholder="e.g. 1648 CE (Mughal Era)" [(ngModel)]="placeForm.yearOrPeriod" name="yearOrPeriod">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Entry Fee</label>
+              <input type="text" class="form-control" placeholder="e.g. INR 50 (Indian), INR 600 (Foreign)" [(ngModel)]="placeForm.entryFee" name="entryFee">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Opening Time</label>
+              <input type="text" class="form-control" [(ngModel)]="placeForm.openingTime" name="openingTime">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Closing Time</label>
+              <input type="text" class="form-control" [(ngModel)]="placeForm.closingTime" name="closingTime">
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Address / Street Location *</label>
+              <input type="text" class="form-control" [(ngModel)]="placeForm.address" name="address" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Latitude</label>
+              <input type="number" step="0.0001" class="form-control" [(ngModel)]="placeForm.latitude" name="latitude">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Longitude</label>
+              <input type="number" step="0.0001" class="form-control" [(ngModel)]="placeForm.longitude" name="longitude">
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Image URL</label>
+              <input type="url" class="form-control" [(ngModel)]="placeForm.imageUrl" name="imageUrl">
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Brief Architectural Description *</label>
+              <textarea class="form-control" rows="3" [(ngModel)]="placeForm.description" name="description" required></textarea>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Historical Background</label>
+              <textarea class="form-control" rows="2" [(ngModel)]="placeForm.historicalBackground" name="historicalBackground" placeholder="In-depth origin, rulers, dynasties, and chronology..."></textarea>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Cultural & Architectural Significance</label>
+              <textarea class="form-control" rows="2" [(ngModel)]="placeForm.historicalSignificance" name="historicalSignificance" placeholder="Cultural impact, artistic craftsmanship, rituals, community value..."></textarea>
+            </div>
+          </div>
+
+          <div class="mt-4 text-end">
+            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-heritage-primary" data-bs-dismiss="modal">
+              {{ isEditingPlace ? 'Save Changes' : 'Create Monument' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL: ADD / EDIT ROUTE ==================== -->
+<div class="modal fade" id="routeModal" tabindex="-1" aria-labelledby="routeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content rounded-3 border-0 shadow">
+      <div class="modal-header bg-dark text-white border-bottom border-warning">
+        <h5 class="modal-title font-serif fw-bold" id="routeModalLabel">
+          <i class="bi bi-map text-warning me-2"></i>
+          {{ isEditingRoute ? 'Edit Walking Route' : 'Add New Walking Route' }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <form (ngSubmit)="saveRoute()">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Route Name *</label>
+              <input type="text" class="form-control" [(ngModel)]="routeForm.name" name="name" required>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Distance (KM) *</label>
+              <input type="number" step="0.1" class="form-control" [(ngModel)]="routeForm.distanceKm" name="distanceKm" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Estimated Duration *</label>
+              <input type="text" class="form-control" placeholder="e.g. 2 Hours 30 Mins" [(ngModel)]="routeForm.estimatedDuration" name="estimatedDuration" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Difficulty Level *</label>
+              <select class="form-select" [(ngModel)]="routeForm.difficultyLevel" name="difficultyLevel" required>
+                <option value="Easy">Easy</option>
+                <option value="Moderate">Moderate</option>
+                <option value="Challenging">Challenging</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Starting Point *</label>
+              <input type="text" class="form-control" placeholder="e.g. Lahori Gate" [(ngModel)]="routeForm.startingPoint" name="startingPoint" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Ending Point *</label>
+              <input type="text" class="form-control" placeholder="e.g. Jama Masjid" [(ngModel)]="routeForm.endingPoint" name="endingPoint" required>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Route Image URL</label>
+              <input type="url" class="form-control" [(ngModel)]="routeForm.imageUrl" name="imageUrl">
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Route Narrative & Itinerary Description *</label>
+              <textarea class="form-control" rows="4" [(ngModel)]="routeForm.description" name="description" required></textarea>
+            </div>
+          </div>
+
+          <div class="mt-4 text-end">
+            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-heritage-primary" data-bs-dismiss="modal">
+              {{ isEditingRoute ? 'Save Changes' : 'Create Walking Route' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL: MANAGE ROUTE STOPS ==================== -->
+<div class="modal fade" id="stopsModal" tabindex="-1" aria-labelledby="stopsModalLabel" aria-hidden="true" *ngIf="selectedRouteForStops">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content rounded-3 border-0 shadow">
+      <div class="modal-header bg-dark text-white border-bottom border-warning">
+        <h5 class="modal-title font-serif fw-bold" id="stopsModalLabel">
+          <i class="bi bi-signpost-split text-warning me-2"></i>
+          Manage Stops for: {{ selectedRouteForStops.name }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <!-- Add Stop Form -->
+        <div class="card p-3 bg-light border mb-4 rounded-3">
+          <h6 class="fw-bold text-dark mb-3">Add a Stop to Sequence</h6>
+          <div class="row g-2 align-items-end">
+            <div class="col-md-5">
+              <label class="small text-muted">Select Monument</label>
+              <select class="form-select form-select-sm" [(ngModel)]="newStopDTO.heritagePlaceId" name="placeId">
+                <option *ngFor="let p of places" [value]="p.id">{{ p.name }}</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="small text-muted">Sequence #</label>
+              <input type="number" class="form-control form-select-sm" [(ngModel)]="newStopDTO.sequenceOrder" name="sequence">
+            </div>
+            <div class="col-md-3">
+              <label class="small text-muted">Stop Notes</label>
+              <input type="text" class="form-control form-select-sm" placeholder="e.g. Tour main hall" [(ngModel)]="newStopDTO.stopNotes" name="notes">
+            </div>
+            <div class="col-md-2">
+              <button class="btn btn-heritage-primary btn-sm w-100" (click)="addStop()">
+                <i class="bi bi-plus"></i> Add
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Stops List -->
+        <h6 class="fw-bold text-dark mb-2">Current Sequence of Stops</h6>
+        <div *ngIf="!selectedRouteForStops.stops || selectedRouteForStops.stops.length === 0" class="text-secondary small py-2">
+          No stops registered for this route yet.
+        </div>
+
+        <ul class="list-group" *ngIf="selectedRouteForStops.stops && selectedRouteForStops.stops.length > 0">
+          <li class="list-group-item d-flex justify-content-between align-items-center" *ngFor="let s of selectedRouteForStops.stops">
+            <div class="d-flex align-items-center gap-3">
+              <span class="badge bg-danger rounded-circle p-2" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;">
+                {{ s.sequenceOrder }}
+              </span>
+              <div>
+                <strong class="text-dark">{{ s.heritagePlace.name }}</strong>
+                <small class="text-muted d-block" *ngIf="s.stopNotes">{{ s.stopNotes }}</small>
+              </div>
+            </div>
+            <button class="btn btn-outline-danger btn-sm" (click)="removeStop(s.id)" title="Remove stop">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Done</button>
+      </div>
+    </div>
+  </div>
+</div>

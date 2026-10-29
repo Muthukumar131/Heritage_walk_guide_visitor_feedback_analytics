@@ -1,0 +1,118 @@
+<div class="bg-dark text-white py-4 border-bottom border-warning">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <span class="heritage-badge mb-2 d-inline-block">Curated Itineraries</span>
+        <h1 class="display-6 fw-bold font-serif mb-1 text-light">Heritage Walking Routes</h1>
+        <p class="text-secondary small mb-0">Discover Delhi on foot through structured paths connecting related historical monuments in sequence.</p>
+      </div>
+      <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a routerLink="/places" class="btn btn-outline-light btn-sm">
+          <i class="bi bi-geo-alt me-1"></i> Browse Monuments
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container py-5">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-danger" role="status"></div>
+    <div class="text-secondary mt-2">Loading walking routes and ordered stops...</div>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="error" class="alert alert-warning border-warning shadow-sm d-flex align-items-center justify-content-between p-3" role="alert">
+    <div>
+      <i class="bi bi-exclamation-triangle-fill text-warning me-2 fs-5"></i>
+      <span>{{ error }}</span>
+    </div>
+    <button class="btn btn-sm btn-outline-dark" (click)="fetchRoutes()">
+      <i class="bi bi-arrow-clockwise me-1"></i> Retry
+    </button>
+  </div>
+
+  <!-- Routes Listing -->
+  <div class="d-flex flex-column gap-5" *ngIf="!loading && !error">
+    <div class="card heritage-card border shadow-sm p-4" *ngFor="let route of routes">
+      <div class="row g-4">
+        <!-- Route Banner & Info -->
+        <div class="col-lg-5">
+          <div class="position-relative rounded-3 overflow-hidden mb-3">
+            <img [src]="route.imageUrl || 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?w=600&auto=format&fit=crop&q=75'"
+                 class="w-100 object-fit-cover rounded-3" [alt]="route.name" style="height: 260px;" loading="lazy">
+            <div class="position-absolute top-0 start-0 m-3 d-flex gap-2">
+              <span class="badge bg-dark bg-opacity-75 text-warning border border-warning">
+                <i class="bi bi-pin-map me-1"></i> {{ route.stops?.length || 0 }} Stops
+              </span>
+              <span class="badge bg-danger text-white">
+                {{ route.difficultyLevel }}
+              </span>
+            </div>
+          </div>
+
+          <h3 class="font-serif fw-bold text-dark mb-2">{{ route.name }}</h3>
+          <p class="text-secondary small mb-3">{{ route.description }}</p>
+
+          <div class="bg-light p-3 rounded-3 small">
+            <div class="row g-2">
+              <div class="col-6">
+                <span class="text-muted d-block">Distance</span>
+                <strong class="text-dark"><i class="bi bi-arrow-left-right text-primary me-1"></i> {{ route.distanceKm }} KM</strong>
+              </div>
+              <div class="col-6">
+                <span class="text-muted d-block">Est. Duration</span>
+                <strong class="text-dark"><i class="bi bi-clock-history text-danger me-1"></i> {{ route.estimatedDuration }}</strong>
+              </div>
+              <div class="col-12 mt-2 pt-2 border-top">
+                <div class="mb-1"><strong>Starting:</strong> <span class="text-secondary">{{ route.startingPoint }}</span></div>
+                <div><strong>Ending:</strong> <span class="text-secondary">{{ route.endingPoint }}</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ordered Stops Sequence (Timeline) -->
+        <div class="col-lg-7">
+          <h5 class="font-serif fw-bold text-dark mb-3 pb-2 border-bottom d-flex align-items-center justify-content-between">
+            <span><i class="bi bi-signpost-split text-danger me-2"></i> Ordered Walking Stops</span>
+            <span class="badge bg-light text-secondary border small">{{ route.stops?.length || 0 }} Sequential Stops</span>
+          </h5>
+
+          <!-- If no stops configured -->
+          <div *ngIf="!route.stops || route.stops.length === 0" class="text-secondary small py-3">
+            No stops have been assigned to this route yet.
+          </div>
+
+          <!-- Sequence Stops Timeline -->
+          <div class="ps-2 mt-3" *ngIf="route.stops && route.stops.length > 0">
+            <div class="timeline-stop" *ngFor="let stop of route.stops">
+              <div class="timeline-badge">
+                {{ stop.sequenceOrder }}
+              </div>
+              <div class="card p-3 border shadow-none bg-light rounded-3">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                  <div class="d-flex align-items-center gap-3">
+                    <img [src]="stop.heritagePlace.imageUrl || 'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=300'"
+                         class="rounded object-fit-cover" style="width: 60px; height: 60px;" [alt]="stop.heritagePlace.name">
+                    <div>
+                      <h6 class="fw-bold mb-1 text-dark">{{ stop.heritagePlace.name }}</h6>
+                      <span class="badge bg-secondary-subtle text-secondary small">{{ stop.heritagePlace.category }}</span>
+                      <p class="small text-muted mb-0 mt-1" *ngIf="stop.stopNotes">
+                        <i class="bi bi-info-circle me-1"></i> {{ stop.stopNotes }}
+                      </p>
+                    </div>
+                  </div>
+                  <a [routerLink]="['/places', stop.heritagePlace.id]" class="btn btn-outline-dark btn-sm text-nowrap">
+                    View Site <i class="bi bi-arrow-right ms-1"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,15 @@
+.hover-gold:hover {
+  color: var(--heritage-gold) !important;
+  padding-left: 4px;
+  transition: all 0.2s ease;
+}
+
+.pointer {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.pointer:hover {
+  transform: translateY(-2px);
+  color: #ffffff;
+}

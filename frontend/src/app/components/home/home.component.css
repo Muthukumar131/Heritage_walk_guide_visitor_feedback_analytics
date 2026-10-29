@@ -1,0 +1,7 @@
+.text-shadow {
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+}
+
+.max-w-700 {
+  max-width: 700px;
+}

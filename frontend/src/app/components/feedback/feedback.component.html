@@ -1,0 +1,173 @@
+<div class="bg-dark text-white py-4 border-bottom border-warning">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <span class="heritage-badge mb-2 d-inline-block">Visitor Experience</span>
+        <h1 class="display-6 fw-bold font-serif mb-1 text-light">Visitor Feedback & Reviews</h1>
+        <p class="text-secondary small mb-0">Share your impressions, rate monuments, and help shape heritage conservation in Delhi.</p>
+      </div>
+      <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a routerLink="/analytics" class="btn btn-heritage-gold btn-sm">
+          <i class="bi bi-bar-chart-line me-1"></i> View Analytics Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container py-5">
+  <div class="row g-5">
+    <!-- Left Column: Submit Feedback Form -->
+    <div class="col-lg-5">
+      <div class="card p-4 border-0 shadow-sm rounded-3 bg-white sticky-top" style="top: 85px;">
+        <h4 class="font-serif fw-bold text-dark mb-1">
+          <i class="bi bi-pencil-square text-danger me-2"></i> Submit Your Review
+        </h4>
+        <p class="text-secondary small mb-4">Rate your recent visit to a Delhi heritage monument.</p>
+
+        <!-- Success Alert -->
+        <div *ngIf="successMessage" class="alert alert-success d-flex align-items-center p-3 rounded-3 shadow-sm mb-3">
+          <i class="bi bi-check-circle-fill fs-5 text-success me-2"></i>
+          <span class="small">{{ successMessage }}</span>
+        </div>
+
+        <!-- Error Alert -->
+        <div *ngIf="errorMessage" class="alert alert-danger d-flex align-items-center p-3 rounded-3 shadow-sm mb-3">
+          <i class="bi bi-exclamation-triangle-fill fs-5 text-danger me-2"></i>
+          <span class="small">{{ errorMessage }}</span>
+        </div>
+
+        <form (ngSubmit)="onSubmit()" #feedbackForm="ngForm">
+          <!-- Monument Selector -->
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Select Heritage Monument <span class="text-danger">*</span></label>
+            <select class="form-select" [(ngModel)]="formData.heritagePlaceId" name="heritagePlaceId" required>
+              <option *ngFor="let p of places" [value]="p.id">
+                {{ p.name }} ({{ p.category }})
+              </option>
+            </select>
+          </div>
+
+          <!-- Interactive 5-Star Rating -->
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark d-block">Overall Rating <span class="text-danger">*</span></label>
+            <div class="d-flex align-items-center gap-2">
+              <div class="d-flex" (mouseleave)="clearHover()">
+                <i *ngFor="let star of [1, 2, 3, 4, 5]"
+                   class="bi interactive-star"
+                   [ngClass]="(hoveredRating || formData.rating) >= star ? 'bi-star-fill active' : 'bi-star'"
+                   (mouseenter)="setHover(star)"
+                   (click)="setRating(star)">
+                </i>
+              </div>
+              <span class="badge bg-warning text-dark fw-bold px-2 py-1">
+                {{ formData.rating }} / 5 Stars
+              </span>
+            </div>
+          </div>
+
+          <!-- Visitor Name -->
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Your Name <span class="text-danger">*</span></label>
+            <input type="text"
+                   class="form-control"
+                   placeholder="e.g. Maya Iyer"
+                   [(ngModel)]="formData.visitorName"
+                   name="visitorName"
+                   required>
+          </div>
+
+          <!-- Visitor Email -->
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Email Address (Optional)</label>
+            <input type="email"
+                   class="form-control"
+                   placeholder="e.g. maya@example.com"
+                   [(ngModel)]="formData.visitorEmail"
+                   name="visitorEmail">
+          </div>
+
+          <!-- Date of Visit -->
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Date of Visit</label>
+            <input type="date"
+                   class="form-control"
+                   [(ngModel)]="formData.visitDate"
+                   name="visitDate">
+          </div>
+
+          <!-- Comment / Review -->
+          <div class="mb-4">
+            <label class="form-label small fw-semibold text-dark">Written Review & Feedback <span class="text-danger">*</span></label>
+            <textarea class="form-control"
+                      rows="4"
+                      placeholder="Describe your walking experience, crowd levels, guide quality, or preservation notes..."
+                      [(ngModel)]="formData.comment"
+                      name="comment"
+                      required></textarea>
+          </div>
+
+          <button type="submit"
+                  class="btn btn-heritage-primary w-100 py-2 fw-semibold shadow-sm"
+                  [disabled]="isSubmitting">
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+            <i *ngIf="!isSubmitting" class="bi bi-send-fill me-2"></i> Submit Feedback
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right Column: Recent Reviews Feed -->
+    <div class="col-lg-7">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h4 class="font-serif fw-bold text-dark mb-0">
+          <i class="bi bi-chat-left-quote text-danger me-2"></i> Community Reviews
+          <span class="badge bg-secondary-subtle text-secondary small ms-1">{{ filteredFeedback.length }}</span>
+        </h4>
+
+        <!-- Filter by place -->
+        <div class="d-flex align-items-center gap-2">
+          <label class="small text-secondary text-nowrap">Filter by Site:</label>
+          <select class="form-select form-select-sm" [(ngModel)]="selectedFilterPlaceId" style="max-width: 200px;">
+            <option value="ALL">All Monuments</option>
+            <option *ngFor="let p of places" [value]="p.id">{{ p.name }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div *ngIf="filteredFeedback.length === 0" class="card p-5 text-center bg-white border rounded-3">
+        <i class="bi bi-chat-dots display-4 text-secondary mb-2"></i>
+        <h5 class="fw-bold text-dark font-serif">No Reviews Yet</h5>
+        <p class="text-secondary small mb-0">Be the first to submit a review using the form on the left!</p>
+      </div>
+
+      <!-- Feedback Cards List -->
+      <div class="d-flex flex-column gap-3" *ngIf="filteredFeedback.length > 0">
+        <div class="card p-4 border-0 shadow-sm rounded-3 bg-white fade-in" *ngFor="let item of filteredFeedback">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+            <div>
+              <span class="badge bg-danger-subtle text-danger border border-danger-subtle mb-1">
+                {{ item.heritagePlace.name }}
+              </span>
+              <h6 class="fw-bold text-dark mb-0">{{ item.visitorName }}</h6>
+              <small class="text-secondary">Visited on {{ item.visitDate || (item.createdAt | date:'mediumDate') }}</small>
+            </div>
+            <div class="text-end">
+              <div class="star-rating">
+                <i class="bi bi-star-fill text-warning" *ngFor="let s of getStarArray(item.rating)"></i>
+                <i class="bi bi-star text-secondary opacity-50" *ngFor="let e of getEmptyStarArray(item.rating)"></i>
+              </div>
+              <span class="badge bg-light text-dark border small mt-1">
+                {{ item.sentiment || 'POSITIVE' }}
+              </span>
+            </div>
+          </div>
+          <p class="text-secondary small mb-0 mt-2 lh-base">
+            "{{ item.comment }}"
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

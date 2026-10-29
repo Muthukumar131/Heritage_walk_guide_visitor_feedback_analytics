@@ -1,0 +1,191 @@
+<!-- Hero Banner Section -->
+<section class="hero-banner d-flex align-items-center">
+  <div class="container text-center py-4">
+    <span class="badge bg-warning text-dark px-3 py-2 text-uppercase fw-bold mb-3 shadow-sm" style="letter-spacing: 2px;">
+      <i class="bi bi-compass me-1"></i> Interactive Heritage Trails
+    </span>
+    <h1 class="display-3 fw-bold mb-3 font-serif text-white text-shadow">
+      Discover the Grandeur of Historic Delhi
+    </h1>
+    <p class="lead text-light mx-auto mb-4" style="max-width: 780px; font-weight: 400; text-shadow: 0 2px 4px rgba(0,0,0,0.6);">
+      Step through centuries of majestic Mughal architecture, sacred mosques, and towering minarets with curated walking routes, historical narratives, and real visitor feedback analytics.
+    </p>
+
+    <div class="d-flex flex-wrap justify-content-center gap-3">
+      <a routerLink="/places" class="btn btn-heritage-gold btn-lg shadow">
+        <i class="bi bi-compass-fill me-2"></i> Explore Monuments
+      </a>
+      <a routerLink="/routes" class="btn btn-outline-light btn-lg shadow">
+        <i class="bi bi-map-fill me-2"></i> View Walking Trails
+      </a>
+      <a routerLink="/feedback" class="btn btn-heritage-primary btn-lg shadow">
+        <i class="bi bi-pencil-square me-2"></i> Share Your Review
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Error notification if backend is offline -->
+<div class="container mt-4" *ngIf="error">
+  <div class="alert alert-warning border-warning shadow-sm d-flex align-items-center justify-content-between p-3" role="alert">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
+      <div>
+        <strong>Connection Notice:</strong> {{ error }}
+      </div>
+    </div>
+    <button class="btn btn-sm btn-outline-dark" (click)="loadHomeData()">
+      <i class="bi bi-arrow-clockwise me-1"></i> Retry
+    </button>
+  </div>
+</div>
+
+<!-- Dynamic KPI Statistics Strip -->
+<section class="py-4 bg-white border-bottom shadow-sm">
+  <div class="container">
+    <div class="row g-3 text-center">
+      <div class="col-6 col-md-3">
+        <div class="p-3 border rounded-3 bg-light">
+          <div class="text-danger fs-2 fw-bold font-serif">{{ analytics?.totalPlaces || 6 }}</div>
+          <div class="text-secondary small fw-semibold text-uppercase">Historic Monuments</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="p-3 border rounded-3 bg-light">
+          <div class="text-primary fs-2 fw-bold font-serif">{{ analytics?.totalRoutes || 2 }}</div>
+          <div class="text-secondary small fw-semibold text-uppercase">Curated Trails</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="p-3 border rounded-3 bg-light">
+          <div class="text-success fs-2 fw-bold font-serif">{{ analytics?.totalFeedback || 8 }}</div>
+          <div class="text-secondary small fw-semibold text-uppercase">Verified Reviews</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="p-3 border rounded-3 bg-light">
+          <div class="text-warning fs-2 fw-bold font-serif">
+            {{ analytics?.overallAverageRating || 4.7 }} <i class="bi bi-star-fill fs-5"></i>
+          </div>
+          <div class="text-secondary small fw-semibold text-uppercase">Average Rating</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Featured Monuments Showcase -->
+<section class="py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-2">
+      <div>
+        <span class="heritage-badge mb-2 d-inline-block">Curated Highlights</span>
+        <h2 class="h1 fw-bold text-dark font-serif mb-0">Featured Heritage Monuments</h2>
+      </div>
+      <a routerLink="/places" class="btn btn-outline-heritage btn-sm">
+        View All Places <i class="bi bi-arrow-right ms-1"></i>
+      </a>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-danger" role="status"></div>
+      <p class="text-secondary mt-2">Loading heritage monuments from database...</p>
+    </div>
+
+    <!-- Places Grid -->
+    <div class="row g-4" *ngIf="!loading">
+      <div class="col-lg-4 col-md-6" *ngFor="let place of featuredPlaces">
+        <div class="card h-100 heritage-card">
+          <div class="position-relative overflow-hidden">
+            <img [src]="place.imageUrl || 'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=600&auto=format&fit=crop&q=75'"
+                 class="card-img-top" [alt]="place.name" loading="lazy">
+            <span class="position-absolute top-0 start-0 m-3 heritage-badge">
+              {{ place.category }}
+            </span>
+            <span class="position-absolute bottom-0 end-0 m-3 badge bg-dark bg-opacity-75 text-white">
+              <i class="bi bi-eye-fill me-1"></i> {{ place.visitCount || 0 }} visits
+            </span>
+          </div>
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title fw-bold font-serif mb-2 text-dark">{{ place.name }}</h5>
+            <p class="card-text text-secondary small flex-grow-1 mb-3">
+              {{ place.description | slice:0:130 }}...
+            </p>
+            <div class="small text-muted mb-3 border-top pt-2">
+              <i class="bi bi-geo-alt text-danger me-1"></i> {{ place.address }}
+            </div>
+            <a [routerLink]="['/places', place.id]" class="btn btn-heritage-primary w-100 mt-auto">
+              <i class="bi bi-journal-text me-1"></i> View Historical Details
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Curated Walking Routes Teaser -->
+<section class="py-5 bg-white border-top border-bottom">
+  <div class="container">
+    <div class="text-center max-w-700 mx-auto mb-5">
+      <span class="heritage-badge mb-2 d-inline-block">Self-Guided Journeys</span>
+      <h2 class="h1 fw-bold text-dark font-serif">Curated Heritage Walking Routes</h2>
+      <p class="text-secondary">
+        Designed for walkers, history enthusiasts, and curious travelers. Each route links iconic monuments in logical sequence with estimated walking times.
+      </p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-6" *ngFor="let route of featuredRoutes">
+        <div class="card heritage-card h-100 border">
+          <div class="row g-0 h-100">
+            <div class="col-md-5">
+              <img [src]="route.imageUrl || 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?w=600&auto=format&fit=crop&q=75'"
+                   class="img-fluid h-100 w-100 object-fit-cover rounded-start" [alt]="route.name" style="min-height: 220px;" loading="lazy">
+            </div>
+            <div class="col-md-7 d-flex flex-column p-4">
+              <div class="d-flex gap-2 mb-2">
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                  <i class="bi bi-lightning-charge me-1"></i> {{ route.difficultyLevel }}
+                </span>
+                <span class="badge bg-secondary-subtle text-secondary">
+                  <i class="bi bi-clock me-1"></i> {{ route.estimatedDuration }}
+                </span>
+              </div>
+              <h5 class="fw-bold font-serif text-dark mb-2">{{ route.name }}</h5>
+              <p class="small text-secondary flex-grow-1 mb-3">
+                {{ route.description | slice:0:110 }}...
+              </p>
+              <div class="small text-muted mb-3">
+                <div><strong>Start:</strong> {{ route.startingPoint }}</div>
+                <div><strong>End:</strong> {{ route.endingPoint }} &bull; <strong>Distance:</strong> {{ route.distanceKm }} km</div>
+              </div>
+              <a routerLink="/routes" class="btn btn-outline-heritage btn-sm w-100 mt-auto">
+                <i class="bi bi-diagram-3 me-1"></i> View Route & Ordered Stops
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Call to Action Banner -->
+<section class="py-5" style="background: linear-gradient(135deg, #1b2430 0%, #304155 100%);">
+  <div class="container text-center text-white py-4">
+    <h2 class="display-6 fw-bold font-serif mb-3 text-warning">Have You Explored Delhi's Heritage?</h2>
+    <p class="lead text-light-emphasis mx-auto mb-4" style="max-width: 680px;">
+      Your feedback helps researchers, fellow travelers, and conservationists. Rate your visit and share your impressions on our live analytics dashboard.
+    </p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+      <a routerLink="/feedback" class="btn btn-heritage-gold btn-lg">
+        <i class="bi bi-star-fill me-2"></i> Submit Visitor Feedback
+      </a>
+      <a routerLink="/analytics" class="btn btn-outline-light btn-lg">
+        <i class="bi bi-pie-chart-fill me-2"></i> View Analytics Dashboard
+      </a>
+    </div>
+  </div>
+</section>

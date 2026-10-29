@@ -1,0 +1,250 @@
+<div class="bg-dark text-white py-4 border-bottom border-warning">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <span class="heritage-badge mb-2 d-inline-block">Data & Insights</span>
+        <h1 class="display-6 fw-bold font-serif mb-1 text-light">Visitor Feedback Analytics Dashboard</h1>
+        <p class="text-secondary small mb-0">Real-time statistics calculated from visitor ratings, monument footfall, and sentiment analysis.</p>
+      </div>
+      <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <button class="btn btn-heritage-gold btn-sm" (click)="loadAnalytics()">
+          <i class="bi bi-arrow-clockwise me-1"></i> Refresh Real-Time Data
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container py-5">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-danger" role="status"></div>
+    <div class="text-secondary mt-2">Computing analytics metrics from MySQL database...</div>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="error" class="alert alert-warning border-warning shadow-sm d-flex align-items-center justify-content-between p-3" role="alert">
+    <div>
+      <i class="bi bi-exclamation-triangle-fill text-warning me-2 fs-5"></i>
+      <span>{{ error }}</span>
+    </div>
+    <button class="btn btn-sm btn-outline-dark" (click)="loadAnalytics()">
+      <i class="bi bi-arrow-clockwise me-1"></i> Try Again
+    </button>
+  </div>
+
+  <div *ngIf="!loading && !error && analytics">
+    <!-- Row 1: KPI Stat Tiles -->
+    <div class="row g-3 mb-4">
+      <div class="col-lg col-sm-6">
+        <div class="kpi-card kpi-places">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="small text-uppercase text-light opacity-75 fw-semibold">Total Sites</div>
+              <h2 class="display-6 fw-bold mb-0 font-serif">{{ analytics.totalPlaces }}</h2>
+            </div>
+            <i class="bi bi-bank2 fs-1 opacity-50"></i>
+          </div>
+          <div class="small text-light opacity-75 mt-2">Heritage monuments logged</div>
+        </div>
+      </div>
+
+      <div class="col-lg col-sm-6">
+        <div class="kpi-card kpi-routes">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="small text-uppercase text-light opacity-75 fw-semibold">Walking Routes</div>
+              <h2 class="display-6 fw-bold mb-0 font-serif">{{ analytics.totalRoutes }}</h2>
+            </div>
+            <i class="bi bi-map fs-1 opacity-50"></i>
+          </div>
+          <div class="small text-light opacity-75 mt-2">Curated walking trails</div>
+        </div>
+      </div>
+
+      <div class="col-lg col-sm-6">
+        <div class="kpi-card kpi-feedback">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="small text-uppercase text-light opacity-75 fw-semibold">Total Reviews</div>
+              <h2 class="display-6 fw-bold mb-0 font-serif">{{ analytics.totalFeedback }}</h2>
+            </div>
+            <i class="bi bi-chat-heart fs-1 opacity-50"></i>
+          </div>
+          <div class="small text-light opacity-75 mt-2">Submitted visitor ratings</div>
+        </div>
+      </div>
+
+      <div class="col-lg col-sm-6">
+        <div class="kpi-card kpi-rating">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="small text-uppercase text-light opacity-75 fw-semibold">Overall Rating</div>
+              <h2 class="display-6 fw-bold mb-0 font-serif">
+                {{ analytics.overallAverageRating }} <small class="fs-5">/ 5</small>
+              </h2>
+            </div>
+            <i class="bi bi-star-fill fs-1 opacity-50"></i>
+          </div>
+          <div class="small text-light opacity-75 mt-2">Across all monuments</div>
+        </div>
+      </div>
+
+      <div class="col-lg col-sm-6">
+        <div class="kpi-card" style="background: linear-gradient(135deg, #0d6efd, #0b5ed7);">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="small text-uppercase text-light opacity-75 fw-semibold">Registered Visitors</div>
+              <h2 class="display-6 fw-bold mb-0 font-serif">
+                {{ analytics.totalRegisteredVisitors || 2 }}
+              </h2>
+            </div>
+            <i class="bi bi-people-fill fs-1 opacity-50"></i>
+          </div>
+          <div class="small text-light opacity-75 mt-2">Active community members</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 1.5: Site Analytics Extremes -->
+    <div class="row g-3 mb-4" *ngIf="analytics.highestRatedSiteName">
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-success border-4">
+          <div class="small text-muted fw-semibold text-uppercase">Highest Rated Site</div>
+          <div class="fw-bold text-dark text-truncate fs-5">{{ analytics.highestRatedSiteName }}</div>
+          <div class="text-success fw-bold mt-1">
+            <i class="bi bi-trophy-fill me-1"></i>{{ analytics.highestRatedScore | number:'1.2-2' }} / 5.00 ★
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-warning border-4">
+          <div class="small text-muted fw-semibold text-uppercase">Lowest Rated Site</div>
+          <div class="fw-bold text-dark text-truncate fs-5">{{ analytics.lowestRatedSiteName }}</div>
+          <div class="text-warning-emphasis fw-bold mt-1">
+            <i class="bi bi-exclamation-circle me-1"></i>{{ analytics.lowestRatedScore | number:'1.2-2' }} / 5.00 ★
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-primary border-4">
+          <div class="small text-muted fw-semibold text-uppercase">Most Reviewed Site</div>
+          <div class="fw-bold text-dark text-truncate fs-5">{{ analytics.mostReviewedSiteName }}</div>
+          <div class="text-primary fw-bold mt-1">
+            <i class="bi bi-chat-quote-fill me-1"></i>{{ analytics.mostReviewedCount }} Reviews
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-secondary border-4">
+          <div class="small text-muted fw-semibold text-uppercase">Least Reviewed Site</div>
+          <div class="fw-bold text-dark text-truncate fs-5">{{ analytics.leastReviewedSiteName }}</div>
+          <div class="text-secondary fw-bold mt-1">
+            <i class="bi bi-chat-dots me-1"></i>{{ analytics.leastReviewedCount }} Reviews
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Charts Section -->
+    <div class="row g-4 mb-4">
+      <!-- Chart 1: Star Rating Distribution -->
+      <div class="col-lg-5">
+        <div class="card p-4 border-0 shadow-sm rounded-3 bg-white h-100">
+          <h5 class="font-serif fw-bold text-dark mb-1">
+            <i class="bi bi-pie-chart text-danger me-2"></i> Rating Distribution (1–5 Stars)
+          </h5>
+          <p class="text-secondary small mb-3">Breakdown of satisfaction ratings given by visitors.</p>
+          <div style="height: 280px; position: relative;">
+            <canvas #distributionChart></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart 2: Average Rating per Monument -->
+      <div class="col-lg-7">
+        <div class="card p-4 border-0 shadow-sm rounded-3 bg-white h-100">
+          <h5 class="font-serif fw-bold text-dark mb-1">
+            <i class="bi bi-bar-chart-line text-danger me-2"></i> Average Ratings by Monument
+          </h5>
+          <p class="text-secondary small mb-3">Comparison of visitor satisfaction scores across sites.</p>
+          <div style="height: 280px; position: relative;">
+            <canvas #placeRatingsChart></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: Top Visited Places Table & Recent Reviews -->
+    <div class="row g-4">
+      <!-- Most Visited Monuments -->
+      <div class="col-lg-6">
+        <div class="card p-4 border-0 shadow-sm rounded-3 bg-white h-100">
+          <h5 class="font-serif fw-bold text-dark mb-3 pb-2 border-bottom">
+            <i class="bi bi-fire text-danger me-2"></i> Most Visited Heritage Sites
+          </h5>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light small">
+                <tr>
+                  <th>Rank & Monument</th>
+                  <th>Category</th>
+                  <th class="text-end">Visits / Views</th>
+                </tr>
+              </thead>
+              <tbody class="small">
+                <tr *ngFor="let p of analytics.popularPlaces; let i = index">
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="badge rounded-circle bg-dark text-warning p-2" style="width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;">
+                        {{ i + 1 }}
+                      </span>
+                      <a [routerLink]="['/places', p.id]" class="fw-bold text-decoration-none text-dark">
+                        {{ p.name }}
+                      </a>
+                    </div>
+                  </td>
+                  <td><span class="badge bg-secondary-subtle text-secondary">{{ p.category }}</span></td>
+                  <td class="text-end fw-semibold text-danger">{{ p.visitCount || 0 }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Visitor Reviews Ticker -->
+      <div class="col-lg-6">
+        <div class="card p-4 border-0 shadow-sm rounded-3 bg-white h-100">
+          <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+            <h5 class="font-serif fw-bold text-dark mb-0">
+              <i class="bi bi-chat-square-quote text-danger me-2"></i> Recent Visitor Feedback
+            </h5>
+            <a routerLink="/feedback" class="btn btn-outline-heritage btn-sm">
+              View All <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+          </div>
+
+          <div class="d-flex flex-column gap-3">
+            <div class="p-3 bg-light rounded-3 border" *ngFor="let rev of analytics.recentFeedback">
+              <div class="d-flex justify-content-between align-items-start mb-1">
+                <div>
+                  <strong class="text-dark small d-block">{{ rev.visitorName }}</strong>
+                  <span class="text-secondary" style="font-size: 0.75rem;">
+                    Reviewed {{ rev.heritagePlace.name }}
+                  </span>
+                </div>
+                <div class="star-rating">
+                  <i class="bi bi-star-fill text-warning small" *ngFor="let s of getStarArray(rev.rating)"></i>
+                  <i class="bi bi-star text-secondary opacity-50 small" *ngFor="let e of getEmptyStarArray(rev.rating)"></i>
+                </div>
+              </div>
+              <p class="small text-secondary mb-0 fst-italic">"{{ rev.comment }}"</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

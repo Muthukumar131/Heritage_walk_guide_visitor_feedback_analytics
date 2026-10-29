@@ -1,0 +1,134 @@
+<!-- Top Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark navbar-heritage sticky-top">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center gap-2" routerLink="/home">
+      <i class="bi bi-bank2 fs-3 text-warning"></i>
+      <div>
+        <span class="heritage-brand fw-bold fs-4 d-block lh-1 text-light">HERITAGE WALK</span>
+        <small class="text-warning-emphasis" style="font-size: 0.68rem; letter-spacing: 1.5px;">DELHI HISTORIC GUIDES & ANALYTICS</small>
+      </div>
+    </a>
+
+    <button class="navbar-toggler border-0" type="button" (click)="toggleNavbar()" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" [class.show]="!isNavbarCollapsed">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center gap-lg-1">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="isNavbarCollapsed = true">
+            <i class="bi bi-house-door me-1"></i> Home
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/places" routerLinkActive="active" (click)="isNavbarCollapsed = true">
+            <i class="bi bi-geo-alt me-1"></i> Monuments & Sites
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/routes" routerLinkActive="active" (click)="isNavbarCollapsed = true">
+            <i class="bi bi-map me-1"></i> Walking Routes
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/feedback" routerLinkActive="active" (click)="isNavbarCollapsed = true">
+            <i class="bi bi-star me-1"></i> Visitor Feedback
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/analytics" routerLinkActive="active" (click)="isNavbarCollapsed = true">
+            <i class="bi bi-bar-chart-line me-1"></i> Analytics
+          </a>
+        </li>
+
+        <!-- Visitor & Admin Portal links -->
+        <li class="nav-item ms-lg-2 mt-2 mt-lg-0" *ngIf="!authService.isAuthenticated()">
+          <div class="d-flex gap-2">
+            <a class="btn btn-outline-light btn-sm px-3 rounded-pill" routerLink="/admin/login" (click)="isNavbarCollapsed = true">
+              <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+            </a>
+            <a class="btn btn-warning btn-sm px-3 rounded-pill fw-semibold" routerLink="/register" (click)="isNavbarCollapsed = true">
+              <i class="bi bi-person-plus-fill me-1"></i> Register
+            </a>
+          </div>
+        </li>
+
+        <li class="nav-item ms-lg-2 mt-2 mt-lg-0" *ngIf="authService.isAuthenticated()">
+          <div class="d-flex align-items-center gap-2">
+            <!-- If Admin -->
+            <a *ngIf="authService.isAdmin()" class="btn btn-warning btn-sm fw-semibold rounded-pill" routerLink="/admin" (click)="isNavbarCollapsed = true">
+              <i class="bi bi-speedometer2 me-1"></i> Admin Hub
+            </a>
+
+            <!-- If Visitor -->
+            <a *ngIf="authService.isVisitor()" class="btn btn-primary btn-sm fw-semibold rounded-pill" routerLink="/visitor" (click)="isNavbarCollapsed = true">
+              <i class="bi bi-person-circle me-1"></i> My Dashboard
+            </a>
+
+            <span class="badge bg-dark border border-secondary text-light small py-1 px-2 d-none d-lg-inline">
+              {{ authService.getCurrentUser()?.fullName || authService.getCurrentUser()?.username }}
+            </span>
+
+            <button class="btn btn-outline-light btn-sm rounded-pill" (click)="logout(); isNavbarCollapsed = true" title="Logout">
+              <i class="bi bi-box-arrow-right"></i>
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Main Router Content -->
+<main class="flex-grow-1">
+  <router-outlet></router-outlet>
+</main>
+
+<!-- Footer -->
+<footer class="bg-dark text-light border-top border-warning border-3 mt-auto">
+  <div class="container py-5">
+    <div class="row g-4">
+      <div class="col-lg-5 col-md-6">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <i class="bi bi-bank2 fs-3 text-warning"></i>
+          <h5 class="heritage-brand mb-0 text-white">Heritage Walk Guide</h5>
+        </div>
+        <p class="text-secondary small mb-3">
+          Dedicated to celebrating, preserving, and making Delhi's monumental heritage and historic architecture accessible through interactive walking routes, immersive stories, and community feedback analytics.
+        </p>
+        <div class="d-flex gap-3 text-warning fs-5">
+          <i class="bi bi-facebook pointer"></i>
+          <i class="bi bi-twitter-x pointer"></i>
+          <i class="bi bi-instagram pointer"></i>
+          <i class="bi bi-youtube pointer"></i>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6">
+        <h6 class="text-uppercase text-warning fw-bold mb-3 font-serif">Quick Navigation</h6>
+        <ul class="list-unstyled small text-secondary">
+          <li class="mb-2"><a routerLink="/places" class="text-decoration-none text-light-emphasis hover-gold"><i class="bi bi-chevron-right me-1"></i> Browse Heritage Places</a></li>
+          <li class="mb-2"><a routerLink="/routes" class="text-decoration-none text-light-emphasis hover-gold"><i class="bi bi-chevron-right me-1"></i> Curated Walking Routes</a></li>
+          <li class="mb-2"><a routerLink="/feedback" class="text-decoration-none text-light-emphasis hover-gold"><i class="bi bi-chevron-right me-1"></i> Submit Visitor Review</a></li>
+          <li class="mb-2"><a routerLink="/analytics" class="text-decoration-none text-light-emphasis hover-gold"><i class="bi bi-chevron-right me-1"></i> Live Feedback Analytics</a></li>
+          <li class="mb-2"><a routerLink="/admin/login" class="text-decoration-none text-light-emphasis hover-gold"><i class="bi bi-chevron-right me-1"></i> Staff Administration Portal</a></li>
+        </ul>
+      </div>
+
+      <div class="col-lg-4 col-md-12">
+        <h6 class="text-uppercase text-warning fw-bold mb-3 font-serif">Visitor Support & Inquiries</h6>
+        <p class="text-secondary small mb-2"><i class="bi bi-geo-alt-fill text-warning me-2"></i> Delhi Tourism & Culture Centre, New Delhi, India</p>
+        <p class="text-secondary small mb-2"><i class="bi bi-envelope-fill text-warning me-2"></i> info&#64;heritagewalk.org</p>
+        <p class="text-secondary small mb-2"><i class="bi bi-telephone-fill text-warning me-2"></i> +91 (011) 2345-6789</p>
+        <p class="text-secondary small mb-0"><i class="bi bi-clock-fill text-warning me-2"></i> Support: Mon – Sat, 9:00 AM – 6:00 PM IST</p>
+      </div>
+    </div>
+
+    <hr class="border-secondary my-4">
+
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center small text-secondary">
+      <span>&copy; 2026 Heritage Walk Guide & Visitor Analytics. All rights reserved.</span>
+      <span class="mt-2 mt-sm-0">Built with Angular 17 &bull; Spring Boot 3 &bull; MySQL</span>
+    </div>
+  </div>
+</footer>
